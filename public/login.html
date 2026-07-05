@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AzeeTech - Smart Menu Login</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { 
+            margin: 0; 
+            padding: 0; 
+            background: linear-gradient(135deg, #1e272e, #2f3542); 
+            min-height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            color: #fff;
+        }
+        .login-container { 
+            background: rgba(255, 255, 255, 0.05); 
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px; 
+            border-radius: 24px; 
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4); 
+            width: 100%; 
+            max-width: 450px; 
+            text-align: center;
+        }
+        .brand-logo {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(45deg, #ff4757, #ff6b81);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 5px;
+            letter-spacing: 1px;
+        }
+        .brand-sub {
+            font-size: 13px;
+            color: #a4b0be;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 25px;
+        }
+        .marketing-box {
+            background: rgba(255, 71, 87, 0.1);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-left: 4px solid #ff4757;
+            text-align: left;
+        }
+        .marketing-box h4 { margin: 0 0 5px 0; color: #ff6b81; font-size: 15px; }
+        .marketing-box p { margin: 0; font-size: 12px; color: #ced6e0; line-height: 1.5; }
+        
+        .input-group { text-align: left; margin-bottom: 18px; }
+        .input-group label { display: block; font-size: 13px; color: #ced6e0; margin-bottom: 6px; font-weight: 500; }
+        input { 
+            width: 100%; 
+            padding: 14px 16px; 
+            border-radius: 12px; 
+            border: 1px solid rgba(255,255,255,0.2); 
+            background: rgba(0,0,0,0.2); 
+            color: white; 
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        input:focus { 
+            outline: none; 
+            border-color: #ff4757; 
+            box-shadow: 0 0 10px rgba(255,71,87,0.3);
+        }
+        .btn-login { 
+            background: linear-gradient(45deg, #ff4757, #ff6b81); 
+            color: white; 
+            border: none; 
+            padding: 15px; 
+            width: 100%; 
+            border-radius: 12px; 
+            font-size: 16px; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 10px;
+            box-shadow: 0 5px 15px rgba(255,71,87,0.3);
+            transition: all 0.3s;
+        }
+        .btn-login:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(255,71,87,0.5); }
+        .footer-text { margin-top: 25px; font-size: 12px; color: #747d8c; }
+    </style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="brand-logo">AzeeTech</div>
+        <div class="brand-sub">Smart Menu Ecosystem</div>
+
+        <div class="marketing-box">
+            <h4>👋 Welcome to the Future of Dining!</h4>
+            <p>Empower your restaurant, speed up orders by 30%, and give your customers a VIP contactless experience. Log in to manage your smart dashboard.</p>
+        </div>
+
+        <div class="input-group">
+            <label>Registered Owner Email</label>
+            <input type="email" id="loginEmail" placeholder="name@yourcafe.com">
+        </div>
+
+        <div class="input-group">
+            <label>Secure Password</label>
+            <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key === 'Enter') handleLogin()">
+        </div>
+
+        <button class="btn-login" onclick="handleLogin()">Launch Dashboard 🚀</button>
+
+        <div class="footer-text">
+            Powering modern restaurants worldwide. <br>© 2026 AzeeTech Inc. All Rights Reserved.
+        </div>
+    </div>
+
+    <script>
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+
+            if(!email || !pass) return alert("Please fill all fields");
+
+            fetch('/api/owner/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password: pass })
+            })
+            .then(res => {
+                if(!res.ok) throw new Error("Server connection issues");
+                return res.json();
+            })
+            .then(data => {
+                if(data.success) {
+                    // लॉगिन होते ही होटल ओनर डैशबोर्ड पर भेजें
+                    window.location.href = `/owner-admin.html?id=${data.hotelId}`;
+                } else {
+                    alert(data.message || "Invalid Email or Password!");
+                }
+            })
+            .catch(err => {
+                console.error("Login error:", err);
+                alert("Server error or DB Connecting... Please try again in a moment.");
+            });
+        }
+    </script>
+</body>
+</html>

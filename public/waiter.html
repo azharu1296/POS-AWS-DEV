@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AzeeTech Waiter POS Terminal</title>
+    <style>
+        * { box-sizing: border-box; font-family: '-apple-system', BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin: 0; padding: 0; }
+        
+        /* 📱 मोबाइल-फ़र्स्ट रिस्पॉन्सिव कवच */
+        body { 
+            background-color: #0f1115; 
+            color: #e1e2e6; 
+            padding: 15px;
+            padding-bottom: 80px; /* बॉटम कार्ट बार के लिए जगह भाई */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        /* 🔒 4-Digit Security PIN Screen Style */
+        .pin-gate-container {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #0f1115; z-index: 999; display: flex;
+            flex-direction: column; justify-content: center; align-items: center; padding: 20px;
+        }
+        .pin-box-card {
+            background: #1a1f26; border: 1px solid rgba(255,255,255,0.05);
+            padding: 30px 20px; border-radius: 24px; width: 100%; max-width: 340px; text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        }
+
+        /* 👑 Premium Compact Header */
+        .waiter-header {
+            background: linear-gradient(135deg, #1e2530, #141a24);
+            padding: 15px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);
+            margin-bottom: 15px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .waiter-header h1 { font-size: 16px; font-weight: 800; color: #fff; }
+        .waiter-header h1 span { color: #ff4757; }
+        .waiter-header p { font-size: 11px; color: #a4b0be; margin-top: 2px; }
+
+        /* 🧾 Tables Selection Strip */
+        .section-title { font-size: 13px; font-weight: 700; color: #ff4757; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .waiter-tables-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 20px; }
+        .waiter-table-box {
+            background: rgba(255,255,255,0.01); border: 1.5px dashed rgba(255,255,255,0.1);
+            padding: 12px 5px; border-radius: 12px; text-align: center; font-size: 12px; font-weight: 800;
+            cursor: pointer; transition: 0.2s; color: #cbd5e1;
+        }
+        .waiter-table-box.selected { border: 2px solid #ff4757 !important; background: rgba(255,71,87,0.15) !important; color: #ff4757 !important; }
+        .waiter-table-box.running-active { border: 1.5px solid #ff4757; background: rgba(255,71,87,0.05); color: #ff4757; }
+        .waiter-table-box.vacant-clean { border: 1.5px solid #2ecc71; background: rgba(46,204,113,0.02); color: #2ecc71; }
+
+        /* 🍴 स्लिक मेनू फ़िंगर लिस्ट */
+        .menu-search-box { width: 100%; padding: 12px; background: #1a1f26; border: 1px solid rgba(255,255,255,0.08); border-radius: 12px; color: white; font-size: 14px; outline: none; margin-bottom: 12px; }
+        
+        .category-scroll-ribbon { display: flex; gap: 6px; overflow-x: auto; margin-bottom: 15px; padding-bottom: 5px; scrollbar-width: none; }
+        .category-scroll-ribbon::-webkit-scrollbar { display: none; }
+        .ribbon-btn { background: #1a1f26; border: 1px solid rgba(255,255,255,0.05); padding: 8px 14px; border-radius: 20px; color: #a4b0be; font-size: 11px; font-weight: bold; white-space: nowrap; cursor: pointer; }
+        .ribbon-btn.active { background: #ff4757; color: white; border-color: #ff4757; }
+
+        .waiter-menu-list { display: flex; flex-direction: column; gap: 10px; }
+        .waiter-dish-card {
+            background: #1a1f26; border: 1px solid rgba(255,255,255,0.04);
+            border-radius: 14px; padding: 12px; display: flex; justify-content: space-between; align-items: center;
+        }
+        .dish-info h3 { font-size: 14px; font-weight: 700; color: #fff; }
+        .dish-info p { font-size: 12px; color: #2ecc71; font-weight: 800; margin-top: 3px; }
+
+        /* ➕ / ➖ काउंटर डिज़ाइन */
+        .quantity-controller { display: flex; align-items: center; background: #0f1115; border-radius: 10px; border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
+        .qty-btn { background: transparent; border: none; color: white; width: 32px; height: 32px; font-size: 16px; font-weight: bold; cursor: pointer; }
+        .qty-btn:active { background: rgba(255,255,255,0.05); }
+        .qty-value { padding: 0 6px; font-size: 13px; font-weight: bold; color: #ff4757; min-width: 20px; text-align: center; }
+
+        /* 🛒 बॉटम स्टिकी कार्ट बार भाई */
+        .bottom-cart-bar {
+            position: fixed; bottom: 0; left: 0; width: 100%; background: #161a23;
+            border-top: 1px solid rgba(255,255,255,0.08); padding: 12px 15px; display: none;
+            justify-content: space-between; align-items: center; z-index: 90;
+            box-shadow: 0 -5px 20px rgba(0,0,0,0.45);
+        }
+        .cart-bar-btn {
+            background: linear-gradient(45deg, #ff4757, #ff6b81); color: white;
+            border: none; padding: 12px 20px; border-radius: 10px; font-weight: bold; font-size: 14px; cursor: pointer;
+            box-shadow: 0 4px 12px rgba(255,71,87,0.25);
+        }
+
+        /* 🗂️ वेटर रिव्यू एंड डायनामिक पे मोडल */
+        .waiter-modal {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15,23,42,0.95); backdrop-filter: blur(8px);
+            z-index: 200; display: none; flex-direction: column; justify-content: flex-end;
+        }
+        .waiter-modal-content {
+            background: #1a1f26; border-top-left-radius: 24px; border-top-right-radius: 24px;
+            padding: 20px; max-height: 85%; overflow-y: auto; border-top: 1px solid rgba(255,255,255,0.1);
+        }
+        .modal-close-strip { width: 40px; height: 5px; background: rgba(255,255,255,0.2); border-radius: 10px; margin: 0 auto 15px auto; cursor: pointer; }
+        
+        .qr-holder-box { background: white; padding: 15px; border-radius: 16px; display: inline-block; margin: 15px 0; min-width: 140px; min-height: 140px; }
+        .form-control { width: 100%; padding: 12px; background: #0f1115; border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: white; font-size: 14px; outline: none; margin-bottom: 12px; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+</head>
+<body>
+
+    <div class="pin-gate-container" id="waiterPinGateArea">
+        <div class="pin-box-card">
+            <h2 style="color: #fff; font-size:18px; margin-bottom:8px;">AzeeTech Waiter POS</h2>
+            <p style="color: #a4b0be; font-size:12px; margin-bottom:20px;">🔒 Enter Your Secret 4-Digit Staff PIN to Login</p>
+            <div class="form-group">
+                <input type="password" id="waiterSessionPinField" class="form-control" placeholder="Enter Staff PIN" style="text-align: center; font-size: 20px; letter-spacing: 6px;" oninput="if(this.value.length>4) this.value=this.value.slice(0,4);">
+            </div>
+            <button class="cart-bar-btn" style="width:100%; border-radius:10px; font-weight:bold; height:44px;" onclick="verifyWaiterSessionPinGate()">Unlock Console 🔓</button>
+        </div>
+    </div>
+
+    <div id="waiterMainAppArea" style="display: none;">
+        
+        <div class="waiter-header">
+            <div>
+                <h1 id="lblCafeName">AzeeTech <span>Waiters</span></h1>
+                <p>Staff On: <b id="lblActiveStaffName" style="color:#ff4757;">--</b></p>
+            </div>
+            <div style="text-align: right;">
+                <span style="font-size:10px; background:rgba(46,204,113,0.15); color:#2ecc71; padding:4px 8px; border-radius:6px; font-weight:bold;">LIVE SYNCED</span>
+            </div>
+        </div>
+
+        <div class="section-title">📍 Select Table Number</div>
+        <div class="waiter-tables-grid" id="waiterTablesGridContainer"></div>
+
+        <div id="waiterOrderPunchingSection" style="display: none;">
+            <div class="section-title">🍴 Punch Order Menu</div>
+            <input type="text" id="waiterDishSearchBar" class="menu-search-box" placeholder="🔍 Quick search dish item..." oninput="renderWaiterMenuList()">
+            
+            <div class="category-scroll-ribbon">
+                <button class="ribbon-btn active" id="ribbon-All" onclick="switchWaiterCategory('All')">All Items</button>
+                <button class="ribbon-btn" id="ribbon-Veg" onclick="switchWaiterCategory('Veg')">Veg 🟢</button>
+                <button class="ribbon-btn" id="ribbon-Non-Veg" onclick="switchWaiterCategory('Non-Veg')">Non-Veg 🔴</button>
+                <button class="ribbon-btn" id="ribbon-Egg" onclick="switchWaiterCategory('Egg')">Egg 🟡</button>
+                <button class="ribbon-btn" id="ribbon-Cafe" onclick="switchWaiterCategory('Cafe')">Cafe ☕</button>
+            </div>
+
+            <div class="waiter-menu-list" id="waiterDynamicMenuListContainer"></div>
+        </div>
+
+    </div>
+
+    <div class="bottom-cart-bar" id="waiterBottomStickyCartBar">
+        <div>
+            <p style="font-size: 11px; color: #a4b0be;">Selected Items: <b id="lblTotalCartQty" style="color:#fff;">0</b></p>
+            <p style="font-size: 15px; font-weight: 800; color: #2ecc71;" id="lblTotalCartAmount">₹0.00</p>
+        </div>
+        <button class="cart-bar-btn" onclick="openWaiterReviewOrderModal()">Review & Pay 🛒</button>
+    </div>
+
+    <div class="waiter-modal" id="waiterReviewModalOverlay">
+        <div class="waiter-modal-content">
+            <div class="modal-close-strip" onclick="closeWaiterReviewOrderModal()"></div>
+            <h3 style="color:#fff; font-size:16px; margin-bottom:15px; text-align:center;">📋 Review KOT Receipt Order</h3>
+            
+            <div class="form-group"><input type="text" id="custNameField" class="form-control" placeholder="Customer Name (Optional)"></div>
+            <div class="form-group"><input type="number" id="custPhoneField" class="form-control" placeholder="Customer Phone (Optional)"></div>
+
+            <div style="background:rgba(0,0,0,0.2); padding:12px; border-radius:12px; margin-bottom:15px;">
+                <p style="font-size:13px; color:#cbd5e1; margin-bottom:8px; font-weight:bold;">Punching Items:</p>
+                <div id="waiterCartItemsReviewList" style="font-size:13px; line-height:1.6; color:#a4b0be;"></div>
+                <h4 style="text-align:right; margin-top:8px; color:#2ecc71; font-size:15px;" id="lblModalGrandTotal">Total: ₹0.00</h4>
+            </div>
+
+            <div style="text-align:center; border-top:1px dashed rgba(255,255,255,0.1); padding-top:15px;">
+                <p style="font-size:12px; color:#fbbf24; font-weight:bold;">💳 Scan & Pay Instant Table Bill</p>
+                <div class="qr-holder-box">
+                    <div id="waiterDynamicUpiQrContainer"></div>
+                </div>
+                <p style="font-size:11px; color:#a4b0be; margin-bottom:15px;">Customer should scan the above QR code to pay instantly.</p>
+                <button class="btn-primary" style="background: linear-gradient(45deg, #2ecc71, #2ed573); width:100%; border:none; height:44px; font-weight:bold; color:white; border-radius:10px; cursor:pointer;" onclick="executeFinalWaiterOrderPlacementSubmit()">Confirm Payment & Launch KOT 👨‍🍳🚀</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const hotelId = urlParams.get('id') || localStorage.getItem('waiterHotelId');
+
+        if (!hotelId) {
+            alert("Fatal Error: Missing Restro/Hotel ID!");
+            document.body.innerHTML = `<h1 style='color:red; text-align:center; margin-top:50px;'>Error: Invalid Link!</h1>`;
+        } else {
+            localStorage.setItem('waiterHotelId', hotelId);
+        }
+
+        let waiterGlobalMenu = [];
+        let globalTotalTablesCount = 15;
+        let globalMerchantUpiId = "";
+        let currentlySelectedTableNum = null;
+        let currentWaiterSelectedCategory = "All";
+        let loggedInWaiterName = "Self Order Staff"; // 👥 स्टाफ का एक्टिव नाम भाई
+        
+        let waiterActiveCartMap = {}; 
+
+        function verifyWaiterSessionPinGate() {
+            const enteredPin = document.getElementById('waiterSessionPinField').value.trim();
+            if(!enteredPin) return alert("PIN दर्ज करें भाई!");
+
+            fetch('/api/waiter/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ hotelId, waiterPin: enteredPin })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    loggedInWaiterName = data.waiterName;
+                    document.getElementById('lblActiveStaffName').innerText = loggedInWaiterName;
+                    
+                    document.getElementById('waiterPinGateArea').style.display = "none";
+                    document.getElementById('waiterMainAppArea').style.display = "block";
+                    
+                    // लॉगिन होते ही मास्टर डेटा सिंक करो भाई भाई
+                    fetch(`/api/menu/${hotelId}`)
+                        .then(res => res.json())
+                        .then(hData => {
+                            document.getElementById('lblCafeName').innerHTML = `${hData.name} <span>POS</span>`;
+                            waiterGlobalMenu = hData.menu || [];
+                            globalTotalTablesCount = Number(hData.totalTables) || 15;
+                            globalMerchantUpiId = hData.ownerUpiId || "";
+                            
+                            syncLiveTablesStatusForWaiter();
+                            setInterval(syncLiveTablesStatusForWaiter, 4000);
+                            renderWaiterMenuList();
+                        });
+                } else {
+                    alert(data.message || "Invalid PIN! ❌");
+                    document.getElementById('waiterSessionPinField').value = "";
+                }
+            }).catch(() => alert("Network login error!"));
+        }
+
+        function syncLiveTablesStatusForWaiter() {
+            fetch(`/api/orders/${hotelId}`)
+                .then(res => res.json())
+                .then(liveOrders => {
+                    const container = document.getElementById('waiterTablesGridContainer');
+                    if(!container) return; container.innerHTML = '';
+
+                    const activeTableSet = new Set();
+                    liveOrders.forEach(order => { if (order.tableNumber) activeTableSet.add(String(order.tableNumber)); });
+
+                    for(let t = 1; t <= globalTotalTablesCount; t++) {
+                        const tStr = String(t);
+                        const isRunning = activeTableSet.has(tStr);
+                        let statusClass = isRunning ? "running-active" : "vacant-clean";
+                        let selectClass = (currentlySelectedTableNum === tStr) ? "selected" : "";
+
+                        container.innerHTML += `
+                            <div class="waiter-table-box ${statusClass} ${selectClass}" onclick="handleWaiterTableSelection('${tStr}')">
+                                T-${tStr}
+                            </div>
+                        `;
+                    }
+                });
+        }
+
+        function handleWaiterTableSelection(tableNumber) {
+            currentlySelectedTableNum = tableNumber;
+            waiterActiveCartMap = {}; 
+            updateBottomStickyCartBarUi();
+            
+            document.querySelectorAll('.waiter-table-box').forEach(box => box.classList.remove('selected'));
+            syncLiveTablesStatusForWaiter();
+
+            document.getElementById('waiterOrderPunchingSection').style.display = "block";
+            renderWaiterMenuList();
+        }
+
+        function switchWaiterCategory(catName) {
+            currentWaiterSelectedCategory = catName;
+            document.querySelectorAll('.ribbon-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`ribbon-${catName}`).classList.add('active');
+            renderWaiterMenuList();
+        }
+
+        function renderWaiterMenuList() {
+            const container = document.getElementById('waiterDynamicMenuListContainer');
+            if(!container) return; container.innerHTML = '';
+
+            const query = document.getElementById('waiterDishSearchBar').value.toLowerCase().trim();
+            
+            let filtered = waiterGlobalMenu;
+            if(currentWaiterSelectedCategory !== 'All') {
+                filtered = filtered.filter(item => item.superCategory === currentWaiterSelectedCategory);
+            }
+            if(query) {
+                filtered = filtered.filter(item => item.name.toLowerCase().includes(query));
+            }
+
+            if(filtered.length === 0) {
+                container.innerHTML = `<p style='text-align:center; font-size:12px; color:#a4b0be; padding:20px;'>No dishes matched भाई!</p>`;
+                return;
+            }
+
+            filtered.forEach(item => {
+                const qty = waiterActiveCartMap[item.name] ? waiterActiveCartMap[item.name].quantity : 0;
+                container.innerHTML += `
+                    <div class="waiter-dish-card">
+                        <div class="dish-info">
+                            <h3>${item.name}</h3>
+                            <p>₹${item.price}</p>
+                        </div>
+                        <div class="quantity-controller">
+                            <button class="qty-btn" onclick="modifyWaiterCartQuantity('${item.name}', ${item.price}, -1)">-</button>
+                            <span class="qty-value">${qty}</span>
+                            <button class="qty-btn" onclick="modifyWaiterCartQuantity('${item.name}', ${item.price}, 1)">+</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function modifyWaiterCartQuantity(name, price, delta) {
+            if(!currentlySelectedTableNum) return alert("Please select Table Number first भाई!");
+
+            if(!waiterActiveCartMap[name]) {
+                waiterActiveCartMap[name] = { name: name, price: Number(price), quantity: 0 };
+            }
+
+            waiterActiveCartMap[name].quantity += delta;
+
+            if(waiterActiveCartMap[name].quantity <= 0) {
+                delete waiterActiveCartMap[name];
+            }
+
+            renderWaiterMenuList();
+            updateBottomStickyCartBarUi();
+        }
+
+        function updateBottomStickyCartBarUi() {
+            const bar = document.getElementById('waiterBottomStickyCartBar');
+            let totalQty = 0;
+            let totalAmount = 0;
+
+            Object.values(waiterActiveCartMap).forEach(item => {
+                totalQty += item.quantity;
+                totalAmount += (item.price * item.quantity);
+            });
+
+            if(totalQty > 0) {
+                bar.style.display = "flex";
+                document.getElementById('lblTotalCartQty').innerText = totalQty;
+                document.getElementById('lblTotalCartAmount').innerText = `₹${totalAmount}.00`;
+            } else {
+                bar.style.display = "none";
+            }
+        }
+
+        /* 🛠️ फिनटेक फिक्स: बैंकों का सुरक्षा चक्र और फेल्योर लूप तोड़ने वाला मास्टर मर्चेंट इंजन भाई भाई */
+        function openWaiterReviewOrderModal() {
+            const reviewListContainer = document.getElementById('waiterCartItemsReviewList');
+            reviewListContainer.innerHTML = '';
+            let grandTotal = 0;
+
+            Object.values(waiterActiveCartMap).forEach(item => {
+                let totalRowCost = item.price * item.quantity;
+                grandTotal += totalRowCost;
+                reviewListContainer.innerHTML += `<div>📍 ${item.name} (x${item.quantity}) - <b>₹${totalRowCost}</b></div>`;
+            });
+
+            document.getElementById('lblModalGrandTotal').innerText = `Total Bill: ₹${grandTotal}.00`;
+            
+            const upiTargetContainer = document.getElementById('waiterDynamicUpiQrContainer');
+            upiTargetContainer.innerHTML = '';
+            
+            if(!globalMerchantUpiId) {
+                upiTargetContainer.innerHTML = `<p style='color:#ff4757; font-size:11px; padding:20px; font-weight:bold;'>⚠️ Merchant UPI ID missing in Owner Settings!</p>`;
+            } else {
+                // 🔐 बैंक और पेमेंट एप्स (GPay/PhonePe) को १00% एप्रूव्ड मर्चेंट बताने वाली डीप-लिंकिंग स्ट्रिंग सिंक भाई भाई
+                let upiString = `upi://pay?pa=${encodeURIComponent(globalMerchantUpiId)}&pn=AzeeTechPOS&am=${grandTotal}&cu=INR&mc=0000&mode=02&purpose=00`;
+                
+                // लाइब्रेरी रेंडर इंजन मीडियम एरर करेक्शन के साथ सिंक
+                new QRCode(upiTargetContainer, { 
+                    text: upiString, 
+                    width: 140, 
+                    height: 140,
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            }
+
+            document.getElementById('waiterReviewModalOverlay').style.display = "flex";
+        }
+
+        function closeWaiterReviewOrderModal() { document.getElementById('waiterReviewModalOverlay').style.display = "none"; }
+
+        function executeFinalWaiterOrderPlacementSubmit() {
+            const cName = document.getElementById('custNameField').value.trim() || "Table Guest Client";
+            const cPhone = document.getElementById('custPhoneField').value.trim() || "N/A";
+            const itemsArray = Object.values(waiterActiveCartMap);
+
+            if(itemsArray.length === 0) return alert("Cart is empty!");
+
+            fetch('/api/orders/place', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    hotelId: hotelId,
+                    tableNumber: currentlySelectedTableNum,
+                    customerName: cName,
+                    customerPhone: cPhone,
+                    items: itemsArray,
+                    servedByWaiter: loggedInWaiterName // वेटर का लाइव नाम बैकएंड डेटाबेस में लॉक भाई!
+                })
+            }).then(res => res.json()).then(data => {
+                if(data.success) {
+                    alert(`🚀 KOT Successfully Launched by ${loggedInWaiterName} for Table ${currentlySelectedTableNum}! Sent straight to kitchen.`);
+                    closeWaiterReviewOrderModal();
+                    
+                    waiterActiveCartMap = {};
+                    currentlySelectedTableNum = null;
+                    document.getElementById('waiterOrderPunchingSection').style.display = "none";
+                    updateBottomStickyCartBarUi();
+                    syncLiveTablesStatusForWaiter();
+                }
+            });
+        }
+    </script>
+</body>
+</html>

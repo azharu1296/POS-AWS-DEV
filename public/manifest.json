@@ -1,0 +1,17 @@
+{
+  "short_name": "AzeeTech POS",
+  "name": "AzeeTech Smart Menu Ecosystem",
+  "icons": [
+    {
+      "src": "azhar.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/login.html",
+  "background_color": "#0f1115",
+  "theme_color": "#ff4757",
+  "display": "standalone",
+  "orientation": "portrait"
+}

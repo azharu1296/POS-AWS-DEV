@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Live Menu & Order - Smart QR Cafe</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #f1f5f9; color: #1e293b; padding: 20px; padding-bottom: 90px; }
+        .menu-container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.04); }
+        
+        /* 👥 लॉगिन / गेस्ट वेलकम स्क्रीन */
+        .login-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 200; display: flex; justify-content: center; align-items: center; padding: 20px; }
+        .login-card { background: #1e293b; border-radius: 24px; padding: 30px; width: 100%; max-width: 420px; box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.05); text-align: center; }
+        .login-card h2 { color: #ffffff; margin-bottom: 8px; font-size: 22px; font-weight: 800; }
+        .login-card p { color: #94a3b8; font-size: 14px; margin-bottom: 25px; }
+        .login-card input { width: 100%; padding: 14px; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; color: white; margin-bottom: 15px; font-size: 14px; outline: none; text-align: center; }
+        .login-card input:focus { border-color: #ff4757; }
+        .btn-go { width: 100%; background: linear-gradient(45deg, #ff4757, #ff6b81); color: white; padding: 14px; border: none; border-radius: 12px; font-weight: bold; font-size: 15px; cursor: pointer; box-shadow: 0 4px 15px rgba(255,71,87,0.3); }
+        .btn-guest { display: inline-block; margin-top: 15px; color: #94a3b8; font-size: 13px; cursor: pointer; text-decoration: underline; }
+
+        .cafe-header { text-align: center; margin-bottom: 15px; padding-bottom: 15px; border-bottom: 2px solid #f1f5f9; }
+        .cafe-header h1 { font-size: 24px; color: #0f172a; font-weight: 800; }
+        .table-tag { display: inline-block; background: #ff4757; color: white; padding: 4px 14px; border-radius: 50px; font-size: 12px; font-weight: bold; margin-top: 6px; }
+
+        /* 📁 लेयर १: मेन सुपर कैटेगरी फ़िल्टर टैब्स */
+        .customer-tabs { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 12px; border-bottom: 1px solid #f1f5f9; scrollbar-width: none; }
+        .customer-tabs::-webkit-scrollbar { display: none; }
+        .c-tab-btn { background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 50px; color: #64748b; font-weight: 700; font-size: 13px; cursor: pointer; white-space: nowrap; transition: 0.2s; flex-shrink: 0; }
+        .c-tab-btn:hover, .c-tab-btn.active { background: #ff4757; color: white; border-color: #ff4757; box-shadow: 0 4px 12px rgba(255,71,87,0.15); }
+
+        /* 💊 लेयर २: सब-कैटेगरी पिल्स */
+        .sub-category-pills { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 12px; margin-bottom: 15px; scrollbar-width: none; }
+        .sub-category-pills::-webkit-scrollbar { display: none; }
+        .sub-pill-btn { background: #f1f5f9; border: 1px solid transparent; padding: 6px 14px; border-radius: 8px; color: #475569; font-weight: 600; font-size: 12px; cursor: pointer; white-space: nowrap; transition: 0.2s; flex-shrink: 0; }
+        .sub-pill-btn:hover, .sub-pill-btn.active { background: #e2e8f0; color: #0f172a; border-color: #cbd5e1; }
+
+        /* 📁 कैटेगरी ब्लॉक */
+        .category-block { margin-bottom: 25px; scroll-margin-top: 20px; }
+        .category-title { font-size: 15px; font-weight: 800; color: #ff4757; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 15px; background: #fff5f5; padding: 10px 14px; border-radius: 12px; border-left: 4px solid #ff4757; }
+
+        /* 🍴 डिश कार्ड डिजाइन */
+        .dish-card { display: flex; justify-content: space-between; align-items: center; padding: 16px 0; border-bottom: 1px dashed #e2e8f0; gap: 10px; }
+        .dish-card:last-child { border-bottom: none; }
+        .dish-card .dish-left { display: flex; align-items: center; gap: 12px; flex-grow: 1; }
+        
+        .dot { width: 10px; height: 10px; border-radius: 50px; display: inline-block; flex-shrink: 0; margin-right: 2px; }
+        .dot-veg { background-color: #2ecc71; box-shadow: 0 0 6px #2ecc71; }
+        .dot-nonveg { background-color: #e74c3c; box-shadow: 0 0 6px #e74c3c; }
+        .dot-egg { background-color: #f1c40f; box-shadow: 0 0 6px #f1c40f; }
+        .dot-cafe { background-color: #3498db; box-shadow: 0 0 6px #3498db; }
+
+        /* 📸 डिश इमेज थंबनेल स्टाइल */
+        .dish-thumbnail-img {
+            width: 65px; height: 65px; border-radius: 12px; object-fit: cover;
+            border: 1px solid #e2e8f0; flex-shrink: 0; background: #f8fafc;
+        }
+
+        .dish-details { display: flex; flex-direction: column; gap: 2px; flex-grow: 1; }
+        .dish-name { font-size: 16px; font-weight: 600; color: #1e293b; }
+        .dish-price { font-size: 15px; font-weight: 700; color: #0f172a; }
+        
+        /* ➕ / ➖ काउंटर बटन्स */
+        .action-container { position: relative; flex-shrink: 0; }
+        .btn-add-item { background: white; color: #059669; border: 1px solid #a7f3d0; padding: 6px 18px; border-radius: 8px; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 2px 8px rgba(4,120,87,0.08); }
+        
+        .qty-counter { display: flex; align-items: center; background: #059669; color: white; border-radius: 8px; overflow: hidden; }
+        .qty-counter button { background: none; border: none; color: white; padding: 6px 12px; font-size: 14px; font-weight: bold; cursor: pointer; }
+        .qty-number { padding: 0 4px; font-weight: bold; font-size: 14px; min-width: 18px; text-align: center; }
+
+        /* 🛍️ तैरता हुआ प्रीमियम कार्ट बार */
+        .cart-bar { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); width: calc(100% - 40px); max-width: 560px; background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; justify-content: space-between; align-items: center; padding: 16px 24px; border-radius: 18px; box-shadow: 0 10px 25px rgba(5,150,105,0.3); z-index: 99; display: none; }
+        .btn-view-cart { background: white; color: #059669; border: none; padding: 10px 18px; border-radius: 10px; font-weight: 800; font-size: 13px; cursor: pointer; }
+
+        /* 🛒 लाइव कार्ट ओवरले स्क्रीन */
+        .cart-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15,23,42,0.6); backdrop-filter: blur(4px); z-index: 100; display: flex; align-items: flex-end; display: none; }
+        .modal-content { width: 100%; background: white; border-top-left-radius: 28px; border-top-right-radius: 28px; padding: 25px; max-height: 85%; overflow-y: auto; }
+        .modal-content h2 { font-size: 20px; font-weight: 800; color: #0f172a; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+        .btn-close-modal { background: #f1f5f9; border: none; width: 32px; height: 32px; border-radius: 50px; color: #64748b; font-weight: bold; cursor: pointer; }
+        
+        .cart-items-list { margin-bottom: 20px; }
+        .cart-item-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid #f8fafc; }
+        
+        /* ⚙️ टैक्स समरी डिब्बा */
+        .client-tax-summary-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 12px; font-size: 13px; color: #475569; margin-bottom: 20px; line-height: 1.5; text-align: right; }
+        .btn-confirm-order { width: 100%; background: #ff4757; color: white; border: none; padding: 16px; border-radius: 14px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(255,71,87,0.3); text-align: center; }
+
+        /* ✨ 🔒 फिनटेक यूपीआई पेमेंट ओवरले डिज़ाइन */
+        .fintech-payment-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #0f172a; z-index: 180; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; display: none; overflow-y: auto; }
+        .payment-box-card { background: white; border-radius: 24px; padding: 25px 20px; width: 100%; max-width: 440px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); display: flex; flex-direction: column; align-items: center; }
+        .pay-amount-badge { font-size: 32px; font-weight: 900; color: #059669; margin: 5px 0 15px 0; }
+        
+        /* आलीशान यूपीआई ऐप बटन्स की स्टाइलिंग */
+        .intent-pay-btn { width: 100%; padding: 14px; border: 1px solid #e2e8f0; border-radius: 14px; font-weight: 700; font-size: 14px; margin-bottom: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 10px; color: #1e293b; background: #f8fafc; transition: 0.2s; text-decoration: none; }
+        .intent-pay-btn:hover { background: #edf2f7; transform: translateY(-1px); }
+
+        /* ⬆️ एनिमेटेड एरो स्टाइल सीएसएस भाई भाई भाई */
+        .animated-up-arrow-indicator { font-size: 26px; color: #3498db; animation: bounceArrowTriggerLive 1.2s infinite; margin-bottom: 2px; }
+        @keyframes bounceArrowTriggerLive { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+
+        /* 📸 प्रेस एंड होल्ड गाइडलाइन बिल्ला */
+        .press-hold-instruction-badge { background: rgba(52,152,219,0.08); color: #2980b9; font-size: 11px; font-weight: bold; padding: 6px 14px; border-radius: 8px; display: inline-block; margin-bottom: 20px; border: 1px dashed rgba(52,152,219,0.3); line-height: 1.3; }
+
+        /* 📡 लाइव ऑर्डर ट्रैकर स्क्रीन */
+        .tracking-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: white; z-index: 150; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 30px; text-align: center; display: none; }
+        .tracking-box { background: #f8fafc; border: 2px dashed #e2e8f0; border-radius: 24px; padding: 40px 20px; width: 100%; max-width: 450px; }
+        .loader-icon { font-size: 50px; margin-bottom: 20px; animation: pulse 1.5s infinite; }
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.15); } 100% { transform: scale(1); } }
+        .track-status-title { font-size: 20px; font-weight: 800; color: #0f172a; margin-bottom: 10px; }
+        .track-status-desc { font-size: 14px; color: #64748b; line-height: 1.5; }
+
+        #errorBlock { display: none; text-align: center; padding: 50px 20px; color: #ef4444; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <div class="login-overlay" id="loginOverlaySection">
+        <div class="login-card">
+            <h2>Welcome to Digital Cafe</h2>
+            <p>Please share details to view menu card</p>
+            <input type="text" id="inputCustName" placeholder="Enter Your Name (Optional)">
+            <input type="tel" id="inputCustPhone" placeholder="Mobile Number (Optional)">
+            <button class="btn-go" onclick="saveCustomerDetailsAndOpenMenu()">Proceed to Menu 🍴</button>
+            <span class="btn-guest" onclick="skipLoginAndOrderAsGuest()">Browse as Guest User 👤</span>
+        </div>
+    </div>
+
+    <div class="menu-container" id="menuWrapper">
+        <div class="cafe-header">
+            <h1 id="cafeNameLabel">Loading Cafe Menu...</h1>
+            <span class="table-tag" id="tableLabel">Table: --</span>
+        </div>
+
+        <div class="customer-tabs">
+            <button class="c-tab-btn active" id="ctab-All" onclick="switchCustomerMenuTab('All')">All Menu</button>
+            <button class="c-tab-btn" id="ctab-Veg" onclick="switchCustomerMenuTab('Veg')">Pure Veg 🟢</button>
+            <button class="c-tab-btn" id="ctab-Non-Veg" onclick="switchCustomerMenuTab('Non-Veg')">Non-Veg 🔴</button>
+            <button class="c-tab-btn" id="ctab-Egg" onclick="switchCustomerMenuTab('Egg')">Eggitarian 🟡</button>
+            <button class="c-tab-btn" id="ctab-Cafe" onclick="switchCustomerMenuTab('Cafe')">Cafe & Drinks ☕</button>
+        </div>
+
+        <div class="sub-category-pills" id="subCategoryPillsBox"></div>
+
+        <div id="dynamicMenuSection"></div>
+    </div>
+
+    <div class="cart-bar" id="floatingCartBar">
+        <div class="cart-text">
+            <h4 id="cartTotalItemsLabel">0 Item Selected</h4>
+            <p id="cartTotalPriceLabel">Total Bill: ₹0</p>
+        </div>
+        <button class="btn-view-cart" onclick="openCartModal()">View Cart 🛒</button>
+    </div>
+
+    <div class="cart-modal" id="cartModalSection">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Review Your Order Items</h2>
+                <button class="btn-close-modal" onclick="closeCartModal()">✕</button>
+            </div>
+            <div class="cart-items-list" id="modalCartItemsContainer"></div>
+            
+            <div class="client-tax-summary-box" id="modalTaxSummaryBreakdownBox"></div>
+
+            <div style="display:flex; justify-content:space-between; margin-bottom:20px; font-weight:800; font-size:18px; color:#0f172a; border-top:1px dashed #cbd5e1; padding-top:10px;">
+                <span>Net Payable Total:</span>
+                <span id="modalGrandTotalLabel">₹0</span>
+            </div>
+            <button class="btn-confirm-order" onclick="triggerFinTechPaymentGateway()">💳 Proceed to Secure Payment</button>
+        </div>
+    </div>
+
+    <div class="fintech-payment-overlay" id="fintechPaymentOverlaySection">
+        <div class="payment-box-card">
+            <h3 style="color:#1e293b; font-weight:800; font-size:16px;">🔐 AzeeTech Instant Mobile POS</h3>
+            <p style="color:#64748b; font-size:12px; margin-top:2px;">Select app or scan QR to complete transaction</p>
+            
+            <div class="pay-amount-badge" id="fastPayAmountBadge">₹0.00</div>
+            
+            <div class="animated-up-arrow-indicator">▲</div>
+            
+            <div style="background:white; padding:10px; border-radius:14px; display:inline-block; margin-bottom:10px; box-shadow:0 4px 15px rgba(0,0,0,0.1);" id="liveDynamicUpiQrCodeMatrixContainer"></div>
+            
+            <div class="press-hold-instruction-badge">
+                ☝️ Press & Hold QR code to Save inside Gallery / Scan to Pay
+            </div>
+            
+            <div style="margin-bottom: 20px; width:100%;" id="intentAppButtonsWrapperBox"></div>
+            
+            <p style="font-size:11px; color:#ff4757; font-weight:700; margin-bottom:20px;">⚠️ ऐप में पेमेंट पिन डालने के बाद नीचे कन्फर्म बटन दबाएं भाई!</p>
+            
+            <button class="btn-go" style="background:#059669; box-shadow:0 4px 15px rgba(5,150,105,0.3);" onclick="verifyPaymentAndSendOrderLive()">✅ मैंने पेमेंट कर दिया / Confirm Order</button>
+            <span class="btn-guest" style="color:#ef4444;" onclick="cancelPaymentAndReturnToCart()">❌ Cancel Payment & Go Back</span>
+        </div>
+    </div>
+
+    <div class="tracking-overlay" id="trackingOverlaySection">
+        <div class="tracking-box">
+            <div class="loader-icon" id="trackIcon">⏳</div>
+            <h3 class="track-status-title" id="trackTitle">Sending Order...</h3>
+            <p class="track-status-desc" id="trackDesc">Please wait while your order reaches the kitchen chef cabinet.</p>
+        </div>
+    </div>
+
+    <div id="errorBlock">
+        <h2>⚠️ Service Temporarily Suspended</h2>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const hotelId = urlParams.get('id');
+        const tableNum = urlParams.get('table') || "N/A";
+
+        document.getElementById('tableLabel').innerText = `Table Number: ${tableNum}`;
+
+        let globalMenuArray = [];
+        let customerCartObj = {};
+        let liveCustomerProfile = { name: "Guest User", phone: "N/A" };
+        let activeCustomerTab = 'All'; 
+        
+        let serverHotelName = "SMART CAFE";
+        let serverTaxPercent = 0;
+        let serverUpiId = "";
+        let serverFinalCalculatedPayableAmount = 0; 
+
+        // 📸 एचडी तस्वीरों की डेटाबेस लाइब्रेरी मैपिंग
+        const staticDishImageLibraryMap = {
+            Veg: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=200&q=80",
+            "Non-Veg": "https://images.unsplash.com/photo-1532550907401-a500c9a57435?w=200&q=80",
+            Egg: "https://images.unsplash.com/photo-1525351484163-7529414344d8?w=200&q=80",
+            Cafe: "https://images.unsplash.com/photo-1513530534585-c7b1394c6d51?w=200&q=80",
+            Default: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=200&q=80"
+        };
+
+        if (!hotelId) {
+            document.getElementById('menuWrapper').style.display = "none";
+            document.getElementById('errorBlock').style.display = "block";
+        } else {
+            fetch(`/api/menu/${hotelId}`)
+                .then(res => {
+                    if (res.status === 403 || res.status === 404) {
+                        document.getElementById('menuWrapper').style.display = "none";
+                        document.getElementById('errorBlock').style.display = "block";
+                        throw new Error("Suspended");
+                    }
+                    return res.json())
+                .then(data => {
+                    serverHotelName = data.name || "SMART CAFE";
+                    document.getElementById('cafeNameLabel').innerText = serverHotelName;
+                    
+                    serverTaxPercent = Number(data.taxPercent) || 0;
+                    serverUpiId = data.ownerUpiId || "";
+                    
+                    globalMenuArray = data.menu || [];
+                    renderFilteredCustomerMenu();
+                }).catch(err => console.log(err));
+        }
+
+        function saveCustomerDetailsAndOpenMenu() {
+            const nameVal = document.getElementById('inputCustName').value.trim();
+            const phoneVal = document.getElementById('inputCustPhone').value.trim();
+            if(nameVal) liveCustomerProfile.name = nameVal;
+            if(phoneVal) liveCustomerProfile.phone = phoneVal;
+            document.getElementById('loginOverlaySection').style.display = "none";
+        }
+
+        function skipLoginAndOpenMenu() {
+            document.getElementById('loginOverlaySection').style.display = "none";
+        }
+        
+        function skipLoginAndOrderAsGuest() {
+            document.getElementById('loginOverlaySection').style.display = "none";
+        }
+
+        function switchCustomerMenuTab(tabName) {
+            activeCustomerTab = tabName;
+            document.querySelectorAll('.c-tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.getElementById(`ctab-${tabName}`).classList.add('active');
+            renderFilteredCustomerMenu();
+        }
+
+        function scrollToSubCategorySection(sectionId) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                document.querySelectorAll('.sub-pill-btn').forEach(btn => btn.classList.remove('active'));
+                if(window.event && window.event.target) window.event.target.classList.add('active');
+            }
+        }
+
+        function renderFilteredCustomerMenu() {
+            const section = document.getElementById('dynamicMenuSection');
+            const pillsBox = document.getElementById('subCategoryPillsBox');
+            section.innerHTML = ''; pillsBox.innerHTML = '';
+
+            let targetList = globalMenuArray;
+            if (activeCustomerTab !== 'All') { targetList = targetList.filter(item => item.superCategory === activeCustomerTab); }
+            if (targetList.length === 0) {
+                section.innerHTML = `<p style="text-align:center; color:#64748b; font-size:14px; margin-top:20px;">No dishes available in this category right now! 🍽️</p>`;
+                return;
+            }
+
+            const grouped = {};
+            targetList.forEach(item => {
+                const subCat = item.subCategory || "General Specials";
+                if (!grouped[subCat]) grouped[subCat] = []; grouped[subCat].push(item);
+            });
+
+            for (const categoryName of Object.keys(grouped)) {
+                const safeId = "sec-" + btoa(unescape(encodeURIComponent(categoryName))).replace(/=/g, "");
+                pillsBox.innerHTML += `<button class="sub-pill-btn" onclick="scrollToSubCategorySection('${safeId}')">${categoryName}</button>`;
+            }
+
+            for (const [categoryName, dishes] of Object.entries(grouped)) {
+                const safeId = "sec-" + btoa(unescape(encodeURIComponent(categoryName))).replace(/=/g, "");
+                let block = document.createElement('div');
+                block.className = 'category-block'; block.id = safeId;
+                block.innerHTML = `<h3 class="category-title">${categoryName}</h3>`;
+                
+                dishes.forEach(dish => {
+                    let dotClass = 'dot-veg';
+                    if(dish.superCategory === 'Non-Veg') dotClass = 'dot-nonveg';
+                    if(dish.superCategory === 'Egg') dotClass = 'dot-egg';
+                    if(dish.superCategory === 'Cafe') dotClass = 'dot-cafe';
+
+                    let computedImageSrcPathUrl = staticDishImageLibraryMap[dish.superCategory] || staticDishImageLibraryMap.Default;
+
+                    const escapedName = btoa(unescape(encodeURIComponent(dish.name)));
+                    let actionHtml = `<button class="btn-add-item" onclick="changeQtyLive('${escapedName}', '${dish.name}', ${dish.price}, 1)">ADD</button>`;
+                    if (customerCartObj[dish.name]) {
+                        actionHtml = `<div class="qty-counter"><button onclick="changeQtyLive('${escapedName}', '${dish.name}', ${dish.price}, -1)">−</button><span class="qty-number">${customerCartObj[dish.name].qty}</span><button onclick="changeQtyLive('${escapedName}', '${dish.name}', ${dish.price}, 1)">+</button></div>`;
+                    }
+
+                    block.innerHTML += `
+                        <div class="dish-card">
+                            <div class="dish-left">
+                                <span class="dot ${dotClass}"></span>
+                                <img src="${computedImageSrcPathUrl}" class="dish-thumbnail-img" alt="${dish.name}">
+                                <div class="dish-details">
+                                    <span class="dish-name">${dish.name}</span>
+                                    <span class="dish-price">₹${dish.price}</span>
+                                </div>
+                            </div>
+                            <div class="action-container" id="action-box-${escapedName}">${actionHtml}</div>
+                        </div>`;
+                });
+                section.appendChild(block);
+            }
+        }
+
+        function changeQtyLive(idKey, dishName, price, delta) {
+            if (!customerCartObj[dishName]) customerCartObj[dishName] = { price: price, qty: 0 };
+            customerCartObj[dishName].qty += delta;
+
+            if (customerCartObj[dishName].qty <= 0) {
+                delete customerCartObj[dishName];
+                const box = document.getElementById(`action-box-${idKey}`);
+                if(box) box.innerHTML = `<button class="btn-add-item" onclick="changeQtyLive('${idKey}', '${dishName}', ${price}, 1)">ADD</button>`;
+            } else {
+                const box = document.getElementById(`action-box-${idKey}`);
+                if(box) box.innerHTML = `<div class="qty-counter"><button onclick="changeQtyLive('${idKey}', '${dishName}', ${price}, -1)">−</button><span class="qty-number">${customerCartObj[dishName].qty}</span><button onclick="changeQtyLive('${idKey}', '${dishName}', ${price}, 1)">+</button></div>`;
+            }
+            syncFloatingCartBarUI();
+        }
+
+        function syncFloatingCartBarUI() {
+            const bar = document.getElementById('floatingCartBar');
+            let totalItems = 0; let totalPrice = 0;
+            for (const item of Object.values(customerCartObj)) { totalItems += item.qty; totalPrice += (item.price * item.qty); }
+            if (totalItems > 0) {
+                bar.style.display = "flex";
+                document.getElementById('cartTotalItemsLabel').innerText = `${totalItems} Item Selected`;
+                document.getElementById('cartTotalPriceLabel').innerText = `Total Bill: ₹${totalPrice}`;
+            } else bar.style.display = "none";
+        }
+
+        function openCartModal() {
+            document.getElementById('cartModalSection').style.display = "flex";
+            const container = document.getElementById('modalCartItemsContainer');
+            container.innerHTML = ''; 
+            let itemsSubTotal = 0;
+
+            for (const [name, item] of Object.entries(customerCartObj)) {
+                const itemTotal = item.price * item.qty; itemsSubTotal += itemTotal;
+                container.innerHTML += `<div class="cart-item-row"><div><div style="font-weight:600; color:#334155;">${name}</div><div style="font-size:12px; color:#64748b; margin-top:2px;">₹${item.price} × ${item.qty}</div></div><span style="font-weight:700; color:#0f172a;">₹${itemTotal}</span></div>`;
+            }
+
+            let taxBox = document.getElementById('modalTaxSummaryBreakdownBox');
+            if(serverTaxPercent > 0) {
+                let computedTax = (itemsSubTotal * serverTaxPercent) / 100;
+                serverFinalCalculatedPayableAmount = Math.round(itemsSubTotal + computedTax);
+                let halfRate = (serverTaxPercent / 2).toFixed(1);
+                let halfAmount = (computedTax / 2).toFixed(2);
+
+                taxBox.innerHTML = `Items Subtotal: ₹${itemsSubTotal.toFixed(2)}<br>CGST (${halfRate}%): ₹${halfAmount}<br>SGST (${halfRate}%): ₹${halfAmount}`;
+            } else {
+                serverFinalCalculatedPayableAmount = itemsSubTotal;
+                taxBox.innerHTML = `Items Subtotal: ₹${itemsSubTotal.toFixed(2)}<br>GST Taxes (0%): ₹0.00`;
+            }
+
+            document.getElementById('modalGrandTotalLabel').innerText = `₹${serverFinalCalculatedPayableAmount}.00`;
+        }
+
+        function closeCartModal() { document.getElementById('cartModalSection').style.display = "none"; }
+
+        /* ✨ 🔒 मास्टर फिनटेक फिक्स: ऑन-क्लिक लाइव एनकोडिंग ताकि मर्चेंट का असली नाम (जैसे 'वसीम भाई') 100% शो हो */
+        function triggerFinTechPaymentGateway() {
+            if (serverFinalCalculatedPayableAmount <= 0) return alert("Your cart is empty!");
+            
+            let targetUpi = serverUpiId || "azharshaikh1296@okaxis";
+            
+            // 🎯 फिक्स: यहाँ क्लिक के समय लाइव एनकोड किया गया है ताकि नाम गायब न हो भाई भाई
+            let cleanCafeName = encodeURIComponent(serverHotelName);
+            
+            let universalUpiUrl = `upi://pay?pa=${targetUpi}&pn=${cleanCafeName}&am=${serverFinalCalculatedPayableAmount}&cu=INR&tn=Table-${tableNum}`;
+
+            let isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+            let gpayUrl = "";
+            let phonepeUrl = "";
+            let paytmUrl = "";
+
+            if (isIOS) {
+                gpayUrl = `gpay://upi/pay?pa=${targetUpi}&pn=${cleanCafeName}&am=${serverFinalCalculatedPayableAmount}&cu=INR`;
+                phonepeUrl = `phonepe://upi/pay?pa=${targetUpi}&pn=${cleanCafeName}&am=${serverFinalCalculatedPayableAmount}&cu=INR`;
+                paytmUrl = `paytmmp://upi/pay?pa=${targetUpi}&pn=${cleanCafeName}&am=${serverFinalCalculatedPayableAmount}&cu=INR`;
+            } else {
+                gpayUrl = `intent://pay?pa=${targetUpi}&pn=${cleanCafeName}&am=${serverFinalCalculatedPayableAmount}&cu=INR&tn=Table-${tableNum}#Intent;scheme=upi;package=com.google.android.apps.nbu.paisa.user;end`;
+                phonepeUrl = `intent://pay?pa=${targetUpi}&pn=${cleanCafeName}&am=${serverFinalCalculatedPayableAmount}&cu=INR&tn=Table-${tableNum}#Intent;scheme=upi;package=com.phonepe.app;end`;
+                paytmUrl = `intent://pay?pa=${targetUpi}&pn=${cleanCafeName}&am=${serverFinalCalculatedPayableAmount}&cu=INR&tn=Table-${tableNum}#Intent;scheme=upi;package=net.one97.paytm;end`;
+            }
+
+            document.getElementById('fastPayAmountBadge').innerText = `₹${serverFinalCalculatedPayableAmount}.00`;
+            
+            const qrTargetBox = document.getElementById('liveDynamicUpiQrCodeMatrixContainer');
+            qrTargetBox.innerHTML = ''; 
+            new QRCode(qrTargetBox, {
+                text: universalUpiUrl,
+                width: 155,
+                height: 155,
+                correctLevel: QRCode.CorrectLevel.M
+            });
+
+            const buttonsContainer = document.getElementById('intentAppButtonsWrapperBox');
+            buttonsContainer.innerHTML = `
+                <a href="${gpayUrl}" class="intent-pay-btn" style="border-left: 5px solid #4285F4; text-decoration:none;">🔵 Pay with Google Pay (GPay)</a>
+                <a href="${phonepeUrl}" class="intent-pay-btn" style="border-left: 5px solid #5f259f; text-decoration:none;">🟣 Pay with PhonePe</a>
+                <a href="${paytmUrl}" class="intent-pay-btn" style="border-left: 5px solid #00baf2; text-decoration:none;">⚫ Pay with Paytm App</a>
+                <a href="${universalUpiUrl}" class="intent-pay-btn" style="background:#edf2f7; font-size:12px; color:#475569; text-decoration:none;">📲 Pay with Any Other UPI App</a>
+            `;
+
+            closeCartModal();
+            document.getElementById('fintechPaymentOverlaySection').style.display = "flex";
+        }
+
+        function cancelPaymentAndReturnToCart() {
+            document.getElementById('fintechPaymentOverlaySection').style.display = "none";
+            document.getElementById('cartModalSection').style.display = "flex";
+        }
+
+        function verifyPaymentAndSendOrderLive() {
+            document.getElementById('fintechPaymentOverlaySection').style.display = "none";
+            document.getElementById('menuWrapper').style.display = "none";
+            document.getElementById('floatingCartBar').style.display = "none";
+            document.getElementById('trackingOverlaySection').style.display = "flex";
+
+            const cartItemsArray = [];
+            for (const [name, item] of Object.entries(customerCartObj)) {
+                cartItemsArray.push({ name: name, price: item.price, quantity: item.qty });
+            }
+
+            fetch('/api/orders/place', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    hotelId: hotelId,
+                    tableNumber: tableNum,
+                    customerName: liveCustomerProfile.name,
+                    customerPhone: liveCustomerProfile.phone,
+                    items: cartItemsArray
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    startPollingOrderStatus(data.orderId);
+                } else alert("Error placing order.");
+            }).catch(err => alert("Network Error!"));
+        }
+
+        function startPollingOrderStatus(orderId) {
+            const intervalId = setInterval(() => {
+                fetch(`/api/orders/status/${orderId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        const icon = document.getElementById('trackIcon');
+                        const title = document.getElementById('trackTitle');
+                        const desc = document.getElementById('trackDesc');
+
+                        if (data.status === 'Pending') {
+                            icon.innerText = "⏳";
+                            title.innerText = "Waiting for Chef Approval...";
+                            desc.innerText = `Hey ${liveCustomerProfile.name}, your PAID order has been sent to kitchen cabinet. Waiting for chef to accept it.`;
+                        } 
+                        else if (data.status === 'Accepted') {
+                            icon.innerText = "🍳";
+                            title.innerText = "Order Accepted by Chef!";
+                            desc.innerText = "Your delicious fresh food is currently being prepared with love in the live kitchen. Sit back and relax!";
+                        } 
+                        else if (data.status === 'Ready') {
+                            icon.innerText = "🎉";
+                            title.innerText = "Yum! Food is Ready! 🍽️";
+                            desc.innerText = "Your live hot order is cooked and ready! Please pick it up from the cafe counter or waiter is bringing it to your table!";
+                        }
+                        else if (data.status === 'Completed') {
+                            clearInterval(intervalId);
+                            alert("Enjoy your meal! Order closed.");
+                            window.location.reload();
+                        }
+                    }).catch(err => console.log(err));
+            }, 3000);
+        }
+    </script>
+</body>
+</html>

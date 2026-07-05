@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AzeeTech - Smart QR Menu Ecosystem</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; scroll-behavior: smooth; }
+        body { background: #0f1115; color: #fff; min-height: 100vh; overflow-x: hidden; }
+        
+        /* 👑 प्रीमियम नेविगेशन बार */
+        .navbar { display: flex; justify-content: space-between; align-items: center; padding: 20px 50px; background: rgba(15, 17, 21, 0.75); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(255,255,255,0.05); position: fixed; width: 100%; top: 0; z-index: 100; }
+        .logo { font-size: 26px; font-weight: 800; background: linear-gradient(45deg, #ff4757, #ff6b81); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: 1px; }
+        .nav-links { display: flex; gap: 30px; list-style: none; }
+        .nav-links a { color: #ced6e0; text-decoration: none; font-weight: 600; font-size: 15px; transition: color 0.3s; }
+        .nav-links a:hover { color: #ff4757; }
+        .btn-top-login { background: linear-gradient(45deg, #ff4757, #ff6b81); color: white; border: none; padding: 10px 22px; border-radius: 10px; font-weight: bold; cursor: pointer; transition: all 0.3s; }
+        .btn-top-login:hover { transform: translateY(-2px); box-shadow: 0 5px 15px rgba(255,71,87,0.4); }
+
+        /* 🚀 HERO SECTION (इमेज बैकग्राउंड के साथ) */
+        .hero { 
+            padding: 220px 20px 140px 20px; 
+            text-align: center; 
+            background: linear-gradient(rgba(15, 17, 21, 0.85), rgba(15, 17, 21, 0.95)), url('https://images.unsplash.com/photo-1555396273-367ea4eb4db5?q=80&w=1200&auto=format&fit=crop'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+        }
+        .hero h1 { font-size: 52px; font-weight: 800; margin-bottom: 20px; background: linear-gradient(135deg, #ffffff, #a4b0be); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero p { font-size: 19px; color: #ced6e0; max-width: 650px; margin: 0 auto 40px auto; line-height: 1.6; }
+        
+        /* 💎 अनुभाग और ग्रिड स्टाइलिंग */
+        .section { padding: 100px 50px; max-width: 1200px; margin: 0 auto; text-align: center; }
+        .section h2 { font-size: 36px; color: #ff6b81; margin-bottom: 20px; font-weight: 800; }
+        .section-subtitle { color: #a4b0be; font-size: 16px; max-width: 700px; margin: 0 auto 50px auto; line-height: 1.6; }
+        
+        /* ABOUT SECTION */
+        .about-container { display: flex; align-items: center; gap: 50px; text-align: left; margin-top: 40px; }
+        .about-text { flex: 1; }
+        .about-text p { color: #ced6e0; font-size: 16px; line-height: 1.8; margin-bottom: 20px; }
+        .about-img { flex: 1; width: 100%; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.08); }
+
+        /* FEATURES GRID */
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; margin-top: 20px; }
+        .card { background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.05); padding: 0; border-radius: 24px; overflow: hidden; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.2); transition: transform 0.3s; }
+        .card:hover { transform: translateY(-5px); }
+        .card-img { width: 100%; height: 200px; object-fit: cover; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .card-content { padding: 25px; }
+        .card h3 { color: #fff; margin-bottom: 12px; font-size: 22px; font-weight: 700; }
+        .card p { color: #a4b0be; font-size: 14px; line-height: 1.6; }
+
+        /* 👑 MEET THE FOUNDER SECTION */
+        .founder-container { display: flex; align-items: center; gap: 40px; background: rgba(255,255,255,0.01); border: 1px solid rgba(255,255,255,0.04); padding: 45px; border-radius: 32px; text-align: left; margin-top: 40px; box-shadow: 0 15px 40px rgba(0,0,0,0.2); }
+        .founder-img { width: 130px; height: 130px; border-radius: 50%; object-fit: cover; border: 3px solid #ff4757; box-shadow: 0 10px 20px rgba(255,71,87,0.2); flex-shrink: 0; }
+        .founder-info h3 { font-size: 26px; color: #ffffff; margin-bottom: 4px; font-weight: 800; }
+        .founder-info .title { font-size: 13px; color: #ff6b81; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 15px; }
+        .founder-info p { color: #ced6e0; font-size: 16px; line-height: 1.7; font-style: italic; }
+
+        /* 📝 ENQUIRY SECTION */
+        .enquiry-container { display: flex; background: rgba(255,255,255,0.01); border-radius: 32px; border: 1px solid rgba(255,255,255,0.04); overflow: hidden; box-shadow: 0 15px 40px rgba(0,0,0,0.3); margin-top: 40px; }
+        .enquiry-img-side { flex: 1; background: url('https://images.unsplash.com/photo-1595566112694-2cf1f30801a5?q=80&w=600&auto=format&fit=crop'); background-size: cover; background-position: center; }
+        .enquiry-form { flex: 1; padding: 50px; text-align: left; }
+        .enquiry-form input, .enquiry-form textarea { width: 100%; padding: 14px 18px; margin-bottom: 18px; border-radius: 12px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); color: white; font-size: 15px; outline: none; transition: border-color 0.3s; }
+        .enquiry-form input:focus, .enquiry-form textarea:focus { border-color: #ff4757; }
+        .btn-submit { background: linear-gradient(45deg, #2ed573, #26af5f); color: white; border: none; padding: 15px; width: 100%; border-radius: 12px; font-size: 16px; font-weight: bold; cursor: pointer; box-shadow: 0 5px 15px rgba(46,204,113,0.2); transition: all 0.3s; }
+        .btn-submit:hover { transform: translateY(-2px); box-shadow: 0 7px 20px rgba(46,204,113,0.4); }
+
+        /* 🚪 LOGIN MODAL */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); backdrop-filter: blur(10px); justify-content: center; align-items: center; z-index: 1000; }
+        .modal-content { background: #1a1f26; border: 1px solid rgba(255,255,255,0.1); padding: 45px 40px; border-radius: 28px; width: 100%; max-width: 420px; text-align: center; position: relative; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+        .close-btn { position: absolute; top: 15px; right: 20px; color: #a4b0be; font-size: 28px; cursor: pointer; transition: color 0.2s; }
+        .close-btn:hover { color: #ff4757; }
+
+        footer { text-align: center; padding: 40px 20px; color: #57606f; font-size: 14px; border-top: 1px solid rgba(255,255,255,0.03); margin-top: 60px; }
+        
+        @media (max-width: 900px) { 
+            .navbar { padding: 15px 20px; } 
+            .nav-links { display: none; } 
+            .hero h1 { font-size: 36px; } 
+            .about-container, .enquiry-container, .founder-container { flex-direction: column; text-align: center; }
+            .founder-img { margin: 0 auto; }
+            .enquiry-img-side { display: none; }
+            .section { padding: 60px 20px; }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">AzeeTech</div>
+        <ul class="nav-links">
+            <li><a href="#hero">Home</a></li>
+            <li><a href="#about">About</a></li>
+            <li><a href="#features">Features</a></li>
+            <li><a href="#founder">Founder</a></li>
+            <li><a href="#enquiry">Enquiry</a></li>
+        </ul>
+        <button class="btn-top-login" onclick="openModal()">Owner Login 🚀</button>
+    </nav>
+
+    <section class="hero" id="hero">
+        <h1>The Future of Digital Dining</h1>
+        <p>Empower your restaurant, speed up orders by 30%, and give your customers a premium, interactive contactless QR menu experience.</p>
+        <button class="btn-top-login" style="padding: 16px 38px; font-size: 16px;" onclick="openModal()">Get Started As Owner</button>
+    </section>
+
+    <section class="section" id="about">
+        <h2>About AzeeTech System</h2>
+        <p class="section-subtitle">Revolutionizing the way restaurants interact with food lovers.</p>
+        
+        <div class="about-container">
+            <div class="about-text">
+                <p><b>AzeeTech</b> is an all-in-one Smart Menu Ecosystem designed for modern cafes, hotels, and food courts. We completely replace outdated paper menus with dynamic, beautiful interactive digital interfaces.</p>
+                <p>Our platform helps restaurant owners manage their entire business workflow digitally—from generating stylish table-specific QR codes to managing menu pricing dynamically and dispatching orders directly to the kitchen without manual errors.</p>
+            </div>
+            <img class="about-img" src="https://images.unsplash.com/photo-1559339352-11d035aa65de?q=80&w=600&auto=format&fit=crop" alt="Smart Menu Experience">
+        </div>
+    </section>
+
+    <section class="section" id="features">
+        <h2>Amazing Core Features</h2>
+        <p class="section-subtitle">Everything you need to turn your regular cafe into a smart tech-driven dining hub.</p>
+        
+        <div class="grid">
+            <div class="card">
+                <img class="card-img" src="https://images.unsplash.com/photo-1595079676339-1534801ad6cf?q=80&w=400&auto=format&fit=crop" alt="QR Code">
+                <div class="card-content">
+                    <h3>🖨️ Table QR Generation</h3>
+                    <p>Create independent, elegant QR codes for individual tables instantly. Customers simply scan, browse, and place their orders directly.</p>
+                </div>
+            </div>
+            <div class="card">
+                <img class="card-img" src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=400&auto=format&fit=crop" alt="Menu Manager">
+                <div class="card-content">
+                    <h3>🍴 Live Menu Manager</h3>
+                    <p>Take full control of your menu. Add new dishes, remove items, change prices, or organize categories in real-time with zero downtime.</p>
+                </div>
+            </div>
+            <div class="card">
+                <img class="card-img" src="https://images.unsplash.com/photo-1577106263724-2c8e03bfe9cf?q=80&w=400&auto=format&fit=crop" alt="Kitchen Display">
+                <div class="card-content">
+                    <h3>👨‍🍳 Live Kitchen Sync</h3>
+                    <p>Keep your kitchen staff fully synchronized. Customer orders hit the kitchen display panel instantly, well-organized by table number.</p>
+                </div>
+            </div>
+            <div class="card">
+                <img class="card-img" src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?q=80&w=400&auto=format&fit=crop" alt="Hybrid POS Counter">
+                <div class="card-content">
+                    <h3>🛍️ Hybrid Billing Counter</h3>
+                    <p>Manage traditional on-table dining and direct takeaway/home parcels simultaneously from a single, unified administrative terminal screen.</p>
+                </div>
+            </div>
+            <div class="card">
+                <img class="card-img" src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=400&auto=format&fit=crop" alt="Sales Earning Dashboard">
+                <div class="card-content">
+                    <h3>📊 Real-time Daily Analytics</h3>
+                    <p>Track real-time counter metrics, net daily earnings, and item sold volume. Instantly export sales history leaderboard sheets directly to CSV files.</p>
+                </div>
+            </div>
+            <div class="card">
+                <img class="card-img" src="https://images.unsplash.com/photo-1563986768609-322da13575f3?q=80&w=400&auto=format&fit=crop" alt="Owner Security Gate">
+                <div class="card-content">
+                    <h3>🔐 4-Layer Security Gate</h3>
+                    <p>Complete data protection shield. Restrict unauthorized staff access on critical modules like Waiter PIN configs, Daily Sell Reports, and Live Billing data using secure owner authentication codes.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="founder">
+        <h2>Meet The Founder</h2>
+        <p class="section-subtitle">The vision and developer behind the AzeeTech Ecosystem.</p>
+        
+        <div class="founder-container">
+            <img class="founder-img" src="azhar.jpg" alt="Azhar Shaikh">
+            <div class="founder-info">
+                <h3>Azhar Shaikh</h3>
+                <div class="title">Founder & Lead Architect</div>
+                <p>
+                    "Full-stack developer with a passion for transforming traditional businesses into tech-driven establishments. Built AzeeTech to help restaurant owners automate their operations effortlessly."
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <section class="section" id="enquiry">
+        <h2>Business Enquiry</h2>
+        <p class="section-subtitle">Ready to take your food business to the next level? Get in touch with our team today!</p>
+        
+        <div class="enquiry-container">
+            <div class="enquiry-img-side"></div>
+            <div class="enquiry-form">
+                <input type="text" placeholder="Your Full Name" id="enqName">
+                <input type="email" placeholder="Cafe / Hotel Email Address" id="enqEmail">
+                <textarea placeholder="Tell us about your establishment (Location, Number of tables, etc.)" rows="4" id="enqMsg"></textarea>
+                <button class="btn-submit" onclick="executeBusinessEnquirySubmitEngine()">Submit Request</button>
+            </div>
+        </div>
+    </section>
+
+    <div class="modal" id="loginModal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <div class="logo" style="margin-bottom: 5px; font-size: 32px;">AzeeTech</div>
+            <p style="color: #a4b0be; font-size: 12px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px;">Management Portal</p>
+            
+            <div style="text-align: left; margin-bottom: 15px;">
+                <label style="font-size: 13px; color: #ced6e0; display:block; margin-bottom:5px;">Registered Owner Email</label>
+                <input type="email" id="loginEmail" placeholder="name@yourcafe.com" style="width:100%; padding:13px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.4); color:white;">
+            </div>
+            
+            <div style="text-align: left; margin-bottom: 25px;">
+                <label style="font-size: 13px; color: #ced6e0; display:block; margin-bottom:5px;">Secure Password</label>
+                <input type="password" id="loginPass" placeholder="••••••••" onkeydown="if(event.key === 'Enter') handleLogin()" style="width:100%; padding:13px; border-radius:12px; border:1px solid rgba(255,255,255,0.1); background:rgba(0,0,0,0.4); color:white;">
+            </div>
+
+            <button class="btn-top-login" style="width: 100%; padding: 15px; font-size: 15px;" onclick="handleLogin()">Launch Dashboard 🚀</button>
+        </div>
+    </div>
+
+    <footer>
+        Powering modern restaurants worldwide. <br>© 2026 AzeeTech Inc. All Rights Reserved.
+    </footer>
+
+    <script>
+        function openModal() { document.getElementById('loginModal').style.display = 'flex'; }
+        function closeModal() { document.getElementById('loginModal').style.display = 'none'; }
+
+        window.onclick = function(event) {
+            const modal = document.getElementById('loginModal');
+            if (event.target == modal) { modal.style.display = 'none'; }
+        }
+
+        function handleLogin() {
+            const email = document.getElementById('loginEmail').value;
+            const pass = document.getElementById('loginPass').value;
+
+            if(!email || !pass) return alert("Please fill all fields");
+
+            fetch('/api/owner/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password: pass })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if(data.success) {
+                    window.location.href = `/owner-admin.html?id=${data.hotelId}`;
+                } else {
+                    alert(data.message || "Invalid Email or Password!");
+                }
+            })
+            .catch(err => {
+                console.error("Login error:", err);
+                alert("Server connection error. Please try again.");
+            });
+        }
+
+        // 📲 [नया जावास्क्रिप्ट मास्टर लीड इंजन]: अज़हर भाई का पर्सनल व्हाट्सएप और लाइव मोंगोडीबी एकीकरण भाई भाई
+        function executeBusinessEnquirySubmitEngine() {
+            const name = document.getElementById('enqName').value.trim();
+            const email = document.getElementById('enqEmail').value.trim();
+            const message = document.getElementById('enqMsg').value.trim();
+
+            if (!name || !email) {
+                return alert("कृपया इंक्वायरी रजिस्टर करने के लिए नाम और ईमेल आईडी ज़रूर भरें भाई! ❌");
+            }
+
+            // १. बैकएंड सर्वर को डेटा पोस्ट करो (मोंगोडीबी + ईमेल ब्लास्ट ट्रिगर करने के लिए भाई)
+            fetch('/api/public/enquiry', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ name, email, message })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    alert(`🎉 बेहतरीन! इंक्वायरी डेटाबेस में लॉक हो चुकी है और ईमेल भी भेज दिया गया है भाई।\n\nआपको अब वैन-क्लिक व्हाट्सएप पर रीडायरेक्ट किया जा रहा है!`);
+                    
+                    // २. अज़हर भाई का पर्सनल नंबर `7700053917` व्हाट्सएप यूआरएल मैपिंग लॉजिक भाई भाई
+                    const targetWhatsAppMobile = "917700053917";
+                    const composedTextPayload = `🔥 *AzeeTech POS System - New B2B Lead Generated* %0A%0A👤 *Client Name:* ${encodeURIComponent(name)} %0A📧 *Email Address:* ${encodeURIComponent(email)} %0A📝 *Requirement Details:* ${encodeURIComponent(message || 'No specific description added.')}`;
+                    
+                    // नए टैब में व्हाट्सएप चैट ओपन करें
+                    window.open(`https://wa.me/${targetWhatsAppMobile}?text=${composedTextPayload}`, '_blank');
+
+                    // फॉर्म इनपुट्स को पूरी तरह साफ़ कर दो भाई
+                    document.getElementById('enqName').value = '';
+                    document.getElementById('enqEmail').value = '';
+                    document.getElementById('enqMsg').value = '';
+                } else {
+                    alert(data.message || "इंक्वायरी प्रोसेस करने में डेटाबेस एरर आया भाई! ❌");
+                }
+            })
+            .catch(err => {
+                console.error("Lead Pipeline Error:", err);
+                alert("नेटवर्क स्लो है या सर्वर सिंक नहीं हो रहा है भाई! दोबारा ट्राई करें।");
+            });
+        }
+    </script>
+</body>
+</html>

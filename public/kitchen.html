@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kitchen Live Cabinet - Smart QR Cafe</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 0; }
+        body { background-color: #0f172a; color: #f8fafc; padding: 20px; }
+        .kitchen-container { max-width: 1200px; margin: 0 auto; }
+        
+        .k-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 25px; padding-bottom: 15px; border-bottom: 2px solid #1e293b; }
+        .k-header h1 { font-size: 24px; color: white; font-weight: 800; }
+        .live-indicator { background: #10b981; color: white; padding: 4px 12px; border-radius: 50px; font-size: 12px; font-weight: bold; animation: pulse 2s infinite; }
+        @keyframes pulse { 0% { opacity: 0.6; } 50% { opacity: 1; } 100% { opacity: 0.6; } }
+
+        .orders-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; }
+        
+        /* 👨‍🍳 KOT Card Architecture */
+        .order-card { background: #1e293b; border-radius: 16px; padding: 18px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; justify-content: space-between; position: relative; overflow: hidden; }
+        
+        /* 🛍️ [नया]: डाइनिंग और टेकअवे पार्सल की आलीशान कलर कोडिंग बैज भाई भाई */
+        .badge-dining { background: #ff4757; color: white; padding: 5px 10px; font-weight: bold; font-size: 13px; border-radius: 6px; display: inline-block; margin-bottom: 8px; text-transform: uppercase; }
+        .badge-takeaway { background: #fbbf24; color: #0f172a; padding: 5px 10px; font-weight: bold; font-size: 13px; border-radius: 6px; display: inline-block; margin-bottom: 8px; text-transform: uppercase; }
+        
+        .bill-no-tag { font-size: 12px; font-weight: bold; color: #38bdf8; margin-bottom: 8px; display: block; }
+        
+        /* ⏳ [नया]: लाइव टिक-टिक एजिंग टाइमर की क्लास भाई भाई */
+        .kot-timer-strip { font-size: 11px; font-weight: bold; color: #94a3b8; margin-bottom: 12px; display: flex; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 5px 8px; border-radius: 6px; }
+        .timer-alert-red { color: #ff4757 !important; animation: blinkWarning 1s infinite; font-weight: 900; }
+        @keyframes blinkWarning { 50% { opacity: 0.4; } }
+
+        .items-list { border-top: 1px dashed rgba(255,255,255,0.1); border-bottom: 1px dashed rgba(255,255,255,0.1); padding: 10px 0; margin-bottom: 15px; flex-grow: 1; }
+        .item-row { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 15px; font-weight: 600; }
+        .item-qty { color: #ff6b81; font-weight: 800; font-size: 16px; }
+
+        .btn-group { display: flex; gap: 8px; }
+        .btn-action { flex: 1; padding: 10px; border: none; border-radius: 8px; font-weight: bold; font-size: 12px; cursor: pointer; text-transform: uppercase; }
+        .btn-accept { background: #3b82f6; color: white; }
+        .btn-ready { background: #10b981; color: white; }
+        .btn-complete { background: #475569; color: #cbd5e1; }
+        
+        #noOrdersLabel { grid-column: 1 / -1; text-align: center; color: #64748b; padding: 50px 20px; font-size: 16px; font-weight: bold; }
+    </style>
+    
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+
+    <div class="kitchen-container">
+        <div class="k-header">
+            <h1>👨‍🍳 Kitchen Live KOT Dashboard</h1>
+            <span class="live-indicator">LIVE SYNCED</span>
+        </div>
+
+        <div class="orders-grid" id="ordersGridBox">
+            <div id="noOrdersLabel">🍳 Wait, syncing cabinet data from server...</div>
+        </div>
+    </div>
+
+    <script>
+        const urlParams = new URLSearchParams(window.location.search);
+        const hotelId = urlParams.get('id');
+
+        if (!hotelId) {
+            alert("Error: Missing Hotel ID!");
+            document.getElementById('ordersGridBox').innerHTML = "<h2 style='color:#ff4757; text-align:center;'>⚠️ Invalid Kitchen Token URL!</h2>";
+        }
+
+        let globalKitchenOrdersList = [];
+
+        window.addEventListener('DOMContentLoaded', () => {
+            fetchLiveKitchenOrdersFromServer();
+            // फास्ट पोलिंग बैकअप रडार लूप भाई भाई भाई
+            setInterval(fetchLiveKitchenOrdersFromServer, 4000);
+            // ⏳ लाइव टिक-टिक घड़ी का इंजन हर सेकंड चालू रहेगा भाई
+            setInterval(triggerLiveAgeingTimersUpdateClock, 1000);
+            
+            // 📡 [लाइव सॉकेट कनेक्शन]: बिना रिफ्रेश आर्डर चमकाने वाला मास्टर इंजन
+            if (typeof io !== 'undefined') {
+                const socket = io();
+                socket.on(`newOrder-${hotelId}`, (newOrder) => {
+                    console.log("🚀 New live order received via Socket:", newOrder);
+                    fetchLiveKitchenOrdersFromServer();
+                });
+                socket.on('orderUpdate', () => {
+                    fetchLiveKitchenOrdersFromServer();
+                });
+            }
+        });
+
+        function fetchLiveKitchenOrdersFromServer() {
+            if(!hotelId) return;
+            fetch(`/api/orders/${hotelId}`)
+                .then(res => res.json())
+                .then(data => {
+                    globalKitchenOrdersList = data;
+                    renderKitchenDashboardCards();
+                }).catch(err => console.log(err));
+        }
+
+        function renderKitchenDashboardCards() {
+            const container = document.getElementById('ordersGridBox');
+            if(!container) return;
+            container.innerHTML = '';
+
+            if (globalKitchenOrdersList.length === 0) {
+                container.innerHTML = `<div id="noOrdersLabel">🍳 सुकून का पल है शेफ भाई! अभी किचन कैबिनेट में कोई आर्डर पेंडिंग नहीं है।</div>`;
+                return;
+            }
+
+            globalKitchenOrdersList.forEach(order => {
+                // 🛍️ डाइनिंग वर्सेस टेकअवे पार्सल की कलर कोडिंग लॉजिक भाई भाई भाई
+                const isTakeaway = order.orderType === "Takeaway";
+                const badgeStyleClass = isTakeaway ? "badge-takeaway" : "badge-dining";
+                const badgeLabelText = isTakeaway ? "🛍️ PARCEL / TAKEAWAY" : `📍 DINING TABLE ${order.tableNumber}`;
+
+                let itemsHtml = '';
+                order.items.forEach(item => {
+                    itemsHtml += `<div class="item-row"><span>🔹 ${item.name}</span><span class="item-qty">×${item.quantity}</span></div>`;
+                });
+
+                let buttonActionHtml = '';
+                if (order.status === 'Pending') {
+                    buttonActionHtml = `<button class="btn-action btn-accept" onclick="changeKotStatusLive('${order._id}', 'accept')">🍳 Accept</button>`;
+                } else if (order.status === 'Accepted') {
+                    buttonActionHtml = `<button class="btn-action btn-ready" onclick="changeKotStatusLive('${order._id}', 'ready')">🎉 Ready</button>`;
+                } else if (order.status === 'Ready') {
+                    buttonActionHtml = `<button class="btn-action btn-complete" onclick="changeKotStatusLive('${order._id}', 'complete')">✔ Dispatch</button>`;
+                }
+
+                // 🕒 आर्डर प्लेसमेंट का सटीक समय
+                const orderPushedTime = new Date(order.createdAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true });
+
+                container.innerHTML += `
+                    <div class="order-card">
+                        <div>
+                            <span class="${badgeStyleClass}">${badgeLabelText}</span>
+                            <div class="bill-no-tag">🧾 Bill No: #${order.billNumber || '0000'}</div>
+                            
+                            <div class="kot-timer-strip">
+                                <span>In: ${orderPushedTime}</span>
+                                <span class="live-ticker-clock-span" data-pushed-stamp="${order.createdAt}">⏳ Just Now</span>
+                            </div>
+
+                            <div class="items-list">${itemsHtml}</div>
+                        </div>
+                        <div class="btn-group">${buttonActionHtml}</div>
+                    </div>`;
+            });
+
+            triggerLiveAgeingTimersUpdateClock(); // कार्ड्स बनते ही तुरंत घड़ी चलाओ भाई
+        }
+
+        // ==========================================================
+        // ⏳ [नया]: LIVE TICK-TICK AGEING COUNTER ENGINE FOR CHEF भाई
+        // ==========================================================
+        function triggerLiveAgeingTimersUpdateClock() {
+            document.querySelectorAll('.live-ticker-clock-span').forEach(span => {
+                const pushedStampStr = span.getAttribute('data-pushed-stamp');
+                if(!pushedStampStr) return;
+
+                const startMs = new Date(pushedStampStr).getTime();
+                const currentMs = new Date().getTime();
+                
+                const gapInMinutes = Math.floor((currentMs - startMs) / 60000);
+
+                if(gapInMinutes <= 0) {
+                    span.innerText = `⏳ Just Now`;
+                } else {
+                    span.innerText = `⏳ ${gapInMinutes} Mins Ago`;
+                }
+
+                // 🚨 अगर आर्डर को आए 15 मिनट से ज़्यादा हो जाएँ, तो टाइमर लाल रंग में ब्लिंक करने लगेगा भाई
+                if(gapInMinutes >= 15) {
+                    span.classList.add('timer-alert-red');
+                } else {
+                    span.classList.remove('timer-alert-red');
+                }
+            });
+        }
+
+        function changeKotStatusLive(orderId, action) {
+            fetch(`/api/orders/${action}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ orderId: orderId })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) fetchLiveKitchenOrdersFromServer();
+            }).catch(err => console.log(err));
+        }
+    </script>
+</body>
+</html>
