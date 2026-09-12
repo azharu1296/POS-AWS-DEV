@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    tools {
+        sonarScanner 'sonar-scanner'
+    }
+
     environment {
         AWS_REGION        = 'ap-south-1'
         ECR_REPO_NAME     = 'azeetech-pos-repo'
@@ -36,8 +40,6 @@ pipeline {
                 }
             }
         }
-
-        // --- CD Stages: Ye SIRF 'main' branch par execute honge ---
 
         stage('4. Docker Build & ECR Push') {
             when {
@@ -87,7 +89,6 @@ Build Number: ${env.BUILD_NUMBER}
 Branch: ${env.BRANCH_NAME}
 URL of build: ${env.BUILD_URL}
 Check SonarQube or Jenkins logs for failures.""",
-                recipientProviders: [[$class: 'DevelopersRecipientProvider'], [$class: 'CulpritsRecipientProvider']],
                 to: 'azharu1296@gmail.com'
             )
         }
