@@ -1,16 +1,13 @@
 pipeline {
     agent any
 
-    tools {
-        sonarScanner 'sonar-scanner'
-    }
-
     environment {
         AWS_REGION        = 'ap-south-1'
         ECR_REPO_NAME     = 'azeetech-pos-repo'
         ECS_CLUSTER       = 'azeetech-pos-cluster'
         ECS_SERVICE       = 'azeetech-pos-service'
         AWS_ACCOUNT_ID    = 'YOUR_AWS_ACCOUNT_ID'
+        SCANNER_HOME      = tool 'sonar-scanner'
     }
 
     stages {
@@ -25,7 +22,7 @@ pipeline {
             steps {
                 withSonarQubeEnv('SonarQube-Server') {
                     sh """
-                        sonar-scanner \
+                        ${SCANNER_HOME}/bin/sonar-scanner \
                           -Dsonar.projectKey=azeetech-pos \
                           -Dsonar.sources=.
                     """
